@@ -389,9 +389,9 @@
 					<cfset _taffyRequest.resultSerialized = _taffyRequest.jsonpCallback & "(" & _taffyRequest.resultSerialized & ");" />
 				</cfif>
 
-				<!--- don't return data if etags are enabled and the data hasn't changed --->
 				<cfif application._taffy.settings.useEtags and _taffyRequest.verb eq "GET">
 					<cfif structKeyExists(_taffyRequest.headers, "If-None-Match")>
+						<!--- don't return data if etags are enabled and the data hasn't changed --->
 						<cfset _taffyRequest.clientEtag = _taffyRequest.headers['If-None-Match'] />
 						<cfset _taffyRequest.serverEtag = _taffyRequest.result.getData().hashCode() />
 						<cfif len(_taffyRequest.clientEtag) gt 0 and _taffyRequest.clientEtag eq _taffyRequest.serverEtag>
@@ -400,6 +400,14 @@
 							<cfreturn true />
 						<cfelse>
 							<cfheader name="Etag" value="#_taffyRequest.serverEtag#" />
+						</cfif>
+					<cfelseif structKeyExists(_taffyRequest.headers, "If-Match")>
+						<!---return a 412 if the ETag doesn't match, return the actual data if it does match--->
+						<cfset _taffyRequest.clientEtag = _taffyRequest.headers['If-Match'] />
+						<cfset _taffyRequest.serverEtag = _taffyRequest.result.getData().hashCode() />
+						<cfif len(_taffyRequest.clientEtag) EQ 0 OR ( _taffyRequest.clientEtag NEQ _taffyRequest.serverEtag AND _taffyRequest.clientEtag NEQ "*")>
+							<cfheader statuscode="412" statustext="Precondition Failed" />
+							<cfreturn true/>
 						</cfif>
 					<cfelse>
 						<cfheader name="Etag" value="#_taffyRequest.result.getData().hashCode()#" />

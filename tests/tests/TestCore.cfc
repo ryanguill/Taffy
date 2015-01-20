@@ -50,6 +50,27 @@
 			assertEquals(304, val(local.result.responseHeader.status_code));
 		}
 
+		function test_etag_IF_MATCH(){
+			local.testStruct = StructNew();
+			local.testStruct.ID = "foo";
+			local.h = {};
+			local.h['if-match'] = local.testStruct.hashCode();
+			local.result = apiCall("get", "/echo/foo.json", "", local.h);
+			// debug(local.result);
+			assertEquals(999, val(local.result.responseHeader.status_code));
+
+			local.h['if-match'] = "*";
+			local.result = apiCall("get", "/echo/foo.json", "", local.h);
+			// debug(local.result);
+			assertEquals(999, val(local.result.responseHeader.status_code));
+
+			local.testStruct.ID = "bar";
+			local.h['if-match'] = local.testStruct.hashCode();
+			local.result = apiCall("get", "/echo/foo.json", "", local.h);
+			//debug(local.result);
+			assertEquals(412, val(local.result.responseHeader.status_code));
+		}
+
 		function json_result_is_json(){
 			local.result = apiCall ("get","/echo/2.json","bar=foo");
 			// debug(local.result);
